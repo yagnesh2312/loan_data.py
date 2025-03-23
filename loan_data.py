@@ -2,8 +2,12 @@ import streamlit as st
 import pandas as pd
 import pickle
 
-# Load the trained model
-model = pickle.load(open('loan_model.pkl', 'rb'))
+# Load the trained models
+with open('decision_tree_model.pkl', 'rb') as f:
+    dtree_model = pickle.load(f)
+
+with open('random_forest_model.pkl', 'rb') as f:
+    rf_model = pickle.load(f)
 
 # Set up Streamlit app
 st.set_page_config(page_title="Loan Approval Prediction", layout="wide")
@@ -24,6 +28,9 @@ loan_term = st.sidebar.selectbox("Loan Term (in months)", [12, 24, 36, 60, 120, 
 credit_history = st.sidebar.selectbox("Credit History", [0, 1])
 property_area = st.sidebar.selectbox("Property Area", ["Urban", "Semiurban", "Rural"])
 
+# Model selection dropdown
+model_choice = st.sidebar.selectbox("Select Model", ["Decision Tree", "Random Forest"])
+
 # Convert categorical inputs to numerical values
 input_data = pd.DataFrame({
     'Gender': [1 if gender == "Male" else 0],
@@ -38,8 +45,17 @@ input_data = pd.DataFrame({
     'Property_Area': [0 if property_area == "Rural" else (1 if property_area == "Semiurban" else 2)]
 })
 
-# Predict loan approval
-if st.button("Predict Loan Approval"):
+# Function to predict loan approval based on the selected model
+def predict(model, input_data):
     prediction = model.predict(input_data)
     result = "Approved" if prediction[0] == 1 else "Rejected"
+    return result
+
+# Predict loan approval based on selected model
+if st.button("Predict Loan Approval"):
+    if model_choice == "Decision Tree":
+        result = predict(dtree_model, input_data)
+    elif model_choice == "Random Forest":
+        result = predict(rf_model, input_data)
+    
     st.subheader(f"Loan Status: {result}")
